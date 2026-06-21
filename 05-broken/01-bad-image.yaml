@@ -1,0 +1,25 @@
+# ПОЛОМКА 1 — несуществующий образ.
+# Симптом: под застревает в ErrImagePull / ImagePullBackOff.
+# Тренировка: kubectl get pods (увидишь статус), kubectl describe pod (в Events
+# причина: failed to pull image). Это самый частый реальный инцидент деплоя.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: broken-image
+  labels:
+    drill: broken-image
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      drill: broken-image
+  template:
+    metadata:
+      labels:
+        drill: broken-image
+    spec:
+      containers:
+        - name: app
+          image: nginx:this-tag-does-not-exist-999   # <-- битый тег
+          ports:
+            - containerPort: 80

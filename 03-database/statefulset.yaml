@@ -1,0 +1,58 @@
+# StatefulSet — для stateful-нагрузок (БД). В отличие от Deployment:
+#  - под получает стабильное имя (postgres-0), не случайное
+#  - volumeClaimTemplates создаёт персистентный том, переживающий пересоздание пода
+#  - serviceName связывает с headless Service для стабильного DNS
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  serviceName: postgres        # имя headless Service (из service-secret.yaml)
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgres-secret    # подтягиваем все переменные из Secret
+          env:
+            # PGDATA в подкаталоге — частая практика, чтобы избежать проблем
+            # с правами на корень примонтированного тома
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "trainuser", "-d", "traindb"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+  # volumeClaimTemplates — каждому поду свой PVC (персистентный диск).
+  # В k3s том выделит local-path provisioner автоматически.
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

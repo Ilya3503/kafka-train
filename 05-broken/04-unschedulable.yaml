@@ -1,0 +1,28 @@
+# ПОЛОМКА 4 — под не помещается на ноду (запрошено больше памяти, чем есть).
+# Симптом: под висит в Pending, не назначается на ноду.
+# Тренировка: kubectl describe pod (в Events: FailedScheduling, "Insufficient memory"),
+# kubectl get nodes -o wide и kubectl describe node (сколько ресурсов реально есть).
+# Реальный сценарий: кластер переполнен или запросы выставлены неадекватно.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: broken-resources
+  labels:
+    drill: broken-resources
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      drill: broken-resources
+  template:
+    metadata:
+      labels:
+        drill: broken-resources
+    spec:
+      containers:
+        - name: app
+          image: nginx:1.27
+          resources:
+            requests:
+              memory: 500Gi    # <-- столько памяти на учебной ВМ точно нет
+              cpu: 200m

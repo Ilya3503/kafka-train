@@ -1,0 +1,37 @@
+# ПОЛОМКА 3 — Service не находит поды (selector не совпадает с лейблами подов).
+# Симптом: под Running и здоров, но обращение к сервису не отвечает / нет endpoints.
+# Тренировка: kubectl get endpoints broken-svc (будет ПУСТО — главный признак!),
+# сравни selector сервиса с labels подов. Очень частая реальная ошибка:
+# приложение работает, а трафик не идёт, потому что Service указывает не на те поды.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: svc-app
+  labels:
+    drill: svc-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: real-label          # поды получат лейбл app=real-label
+  template:
+    metadata:
+      labels:
+        app: real-label
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: broken-svc
+spec:
+  selector:
+    app: wrong-label           # <-- НЕ совпадает с app=real-label у подов
+  ports:
+    - port: 80
+      targetPort: 80

@@ -1,0 +1,15 @@
+# Service — стабильное имя и виртуальный IP перед подами web.
+# Поды меняют IP при пересоздании, имя "web" остаётся постоянным.
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels:
+    app: web
+spec:
+  type: ClusterIP              # доступен только внутри кластера (дефолт)
+  selector:
+    app: web                   # шлёт трафик на поды с лейблом app=web
+  ports:
+    - port: 80                 # порт сервиса
+      targetPort: 80           # порт контейнера

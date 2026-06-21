@@ -1,0 +1,19 @@
+# ConfigMap — конфигурация отдельно от образа.
+# Здесь храним кастомную страницу nginx. Тот же образ, разный контент —
+# без пересборки. Меняешь ConfigMap -> монтированный файл меняется.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-content
+  labels:
+    app: web
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+      <head><title>k8s-train</title></head>
+      <body>
+        <h1>Привет из ConfigMap</h1>
+        <p>Эта страница смонтирована в nginx из ConfigMap, а не зашита в образ.</p>
+      </body>
+    </html>

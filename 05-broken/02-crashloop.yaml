@@ -1,0 +1,25 @@
+# ПОЛОМКА 2 — контейнер падает сразу после старта.
+# Симптом: CrashLoopBackOff, растущий Restart Count.
+# Тренировка: kubectl logs <pod> --previous (логи УПАВШЕГО контейнера — ключевой
+# приём!), kubectl describe (Last State: Terminated, Exit Code). Здесь команда
+# намеренно завершается с ошибкой через 2 секунды.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: broken-crash
+  labels:
+    drill: broken-crash
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      drill: broken-crash
+  template:
+    metadata:
+      labels:
+        drill: broken-crash
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sh", "-c", "echo 'стартую...'; sleep 2; echo 'падаю!'; exit 1"]

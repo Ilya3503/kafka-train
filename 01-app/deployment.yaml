@@ -1,0 +1,41 @@
+# Deployment — управляет ReplicaSet, который держит N подов nginx.
+# Основной объект для stateless-приложений.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels:
+    app: web
+spec:
+  replicas: 3                  # желаемое число подов; ReplicaSet держит его
+  selector:
+    matchLabels:
+      app: web                 # по этим лейблам Deployment находит "свои" поды
+  template:                    # шаблон пода для создания
+    metadata:
+      labels:
+        app: web               # лейблы пода — обязаны совпадать с selector выше
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+          livenessProbe:       # не отвечает -> контейнер перезапустят
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:      # не готов -> Service не шлёт на него трафик
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 2
+            periodSeconds: 5
